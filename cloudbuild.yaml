@@ -1,0 +1,47 @@
+steps:
+#First Clone from Google Cloud Source Repository  
+- name: 'gcr.io/cloud-builders/git'
+  args: ['clone','https://github.com/MAXDeliveryNG/casha-core-service']
+  
+#Install and test
+- name: 'gcr.io/cloud-builders/npm'  
+  args: ['install']
+- name: 'gcr.io/cloud-builders/npm'  
+  args: ['test']
+    
+#Build the image 
+- name: 'gcr.io/cloud-builders/docker'  
+  args: ['build','-t','gcr.io/casha-339313/github.com/maxdeliveryng/casha-core-service:${_VERSION}','.']
+
+#Push the image  
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push','gcr.io/casha-339313/github.com/maxdeliveryng/casha-core-service:${_VERSION}']
+  
+# Update the container image using kubectl set
+- name: 'gcr.io/cloud-builders/kubectl'
+  args:
+  - 'set'
+  - 'image'
+  - 'deployment/${_DEPLOYMENTNAME}'
+  - '${_CONTAINERNAME}=gcr.io/casha-339313/github.com/maxdeliveryng/casha-core-service:${_VERSION}'
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=${_ZONE}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_GKE_CLUSTER}'
+  
+substitutions:
+    #GCP Specific configuration. Please DON'T change anything
+    _PROJECT: Casha
+    _ZONE: us-central1-c
+    _GKE_CLUSTER: maxcluster
+    
+    #Repository Specific configuration. DevOps can change this settings
+    _DEPLOYMENTNAME: core-container
+    _CONTAINERNAME: gcr.io/casha-339313/github.com/maxdeliveryng/casha-core-service:${_VERSION}
+    _REPO_NAME: github_maxdeliveryng_casha-core-service
+    
+    
+    # Developers ONLY change
+    _VERSION: v1.0
+    
+options:
+    substitution_option: 'ALLOW_LOOSE'
